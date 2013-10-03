@@ -18,7 +18,7 @@ struct Triangles
 	int[] p;
 	//extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "triangles" );
@@ -32,11 +32,11 @@ struct Triangles
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "name" : { name = attr[1]; } break;
-				case "count" : { count = to!int(attr[1]); } break;
-				case "material" : { material = attr[1]; } break;
+				case "name" : { name = attr.value; } break;
+				case "count" : { count = to!int(attr.value); } break;
+				case "material" : { material = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -73,7 +73,7 @@ struct Vertices
 	InputA[] inputs;
 	//extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "vertices" );
@@ -89,10 +89,10 @@ struct Vertices
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id   = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id   = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;			
 			}
 		}
@@ -127,7 +127,7 @@ enum GEOMETRYTYPE : byte
 struct ConvexMesh
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -157,7 +157,7 @@ struct Mesh
 	//[] tristrips
 	//[] extras
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "mesh" );
@@ -208,7 +208,7 @@ struct Mesh
 struct Spline
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -226,7 +226,7 @@ struct Spline
 struct Brep
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -259,7 +259,7 @@ struct Geometry
 	
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "geometry" );
@@ -272,10 +272,10 @@ struct Geometry
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -326,7 +326,7 @@ struct LibraryGeometries
 	Geometry[] geometries;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_geometries" );
@@ -339,10 +339,10 @@ struct LibraryGeometries
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}

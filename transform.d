@@ -23,7 +23,7 @@ struct LookAt
 	FloatCount!(9) value;
 	alias value this;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "lookat" );
@@ -40,8 +40,8 @@ struct LookAt
 	}
 	body
 	{
-		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0][0] == "sid" ) )
-			sid = xml.attrs[0][1];
+		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0].name == "sid" ) )
+			sid = xml.attrs[0].value;
 	
 		P  = [ xml.texts[0].to!float, xml.texts[1].to!float, xml.texts[2].to!float ];
 		I  = [ xml.texts[3].to!float, xml.texts[4].to!float, xml.texts[5].to!float ];
@@ -84,7 +84,7 @@ struct TransformType(int count, string name)
 	FloatCount!(count) value;
 	alias value this;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == name );
@@ -98,8 +98,8 @@ struct TransformType(int count, string name)
 	}
 	body
 	{
-		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0][0] == "sid" ) )
-			sid = xml.attrs[0][1];
+		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0].name == "sid" ) )
+			sid = xml.attrs[0].value;
 	
 		foreach( i, text; xml.texts )
 			value[i] = text.to!float;

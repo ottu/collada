@@ -14,7 +14,7 @@ struct Channel
 	string source;
 	string target;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "channel" );
@@ -30,10 +30,10 @@ struct Channel
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "source" : { source = attr[1]; } break;
-				case "target" : { target = attr[1]; } break;
+				case "source" : { source = attr.value; } break;
+				case "target" : { target = attr.value; } break;
 				default : { throw new Exception( "Channel attribute switch failed." );} break;
 			}
 		}
@@ -47,7 +47,7 @@ struct Sampler
 	
 	InputA[] inputs;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "sampler" );
@@ -60,8 +60,8 @@ struct Sampler
 	}
 	body
 	{
-		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0][0] == "id" ) )
-			id = xml.attrs[0][1];
+		if( ( xml.attrs.length == 1 ) && ( xml.attrs[0].name == "id" ) )
+			id = xml.attrs[0].value;
 			
 		foreach( elem; xml.elems )
 		{
@@ -94,7 +94,7 @@ struct Animation
 	Channel[]   channels;
 	//[] extra	
 		
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "animation" );
@@ -118,10 +118,10 @@ struct Animation
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id" : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id" : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception( "Animation attribute switch failed." ); } break;
 			}
 		}
@@ -176,7 +176,7 @@ struct LibraryAnimations
 	Animation[] animations;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_animations");
@@ -190,10 +190,10 @@ struct LibraryAnimations
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id" : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id" : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception( "LibraryAnimations attribute switch failed." ); } break;
 			}
 		}

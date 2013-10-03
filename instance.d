@@ -12,7 +12,7 @@ struct InstanceType( string tagName )
 	string url;
 	//[] extra;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == tagName );
@@ -26,11 +26,11 @@ struct InstanceType( string tagName )
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "sid"  : { sid  = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
-				case "url"  : { url  = attr[1]; } break;
+				case "sid"  : { sid  = attr.value; } break;
+				case "name" : { name = attr.value; } break;
+				case "url"  : { url  = attr.value; } break;
 				default : {} break;
 			}
 		}	
@@ -47,7 +47,7 @@ struct BindVertexInput
 	string input_semantic;
 	int    input_set;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "bind_vertex_input" );
@@ -63,11 +63,11 @@ struct BindVertexInput
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "semantic" : { semantic = attr[1]; } break;
-				case "input_semantic" : { input_semantic = attr[1]; } break;
-				case "input_set": { input_set = attr[1].to!int; } break;
+				case "semantic" : { semantic = attr.value; } break;
+				case "input_semantic" : { input_semantic = attr.value; } break;
+				case "input_set": { input_set = attr.value.to!int; } break;
 				default : {} break;
 			}
 		}
@@ -84,12 +84,12 @@ struct InstanceEffect
 	//[] setparam
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "instance_effect" );
 		assert( xml.attrs.length == 1 );
-		assert( xml.attrs[0][0] == "url" );
+		assert( xml.attrs[0].name == "url" );
 	}
 	out
 	{
@@ -97,7 +97,7 @@ struct InstanceEffect
 	}
 	body
 	{
-		url = xml.attrs[0][1];	
+		url = xml.attrs[0].value;	
 		
 		foreach( elem; xml.elems )
 		{
@@ -123,7 +123,7 @@ struct InstanceMaterial
 	BindVertexInput[] bind_vertex_inputs;
 	//extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "instance_material" );
@@ -138,12 +138,12 @@ struct InstanceMaterial
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "sid"    : { sid    = attr[1]; } break;
-				case "name"   : { name   = attr[1]; } break;
-				case "target" : { target = attr[1]; } break;
-				case "symbol" : { symbol = attr[1]; } break;
+				case "sid"    : { sid    = attr.value; } break;
+				case "name"   : { name   = attr.value; } break;
+				case "target" : { target = attr.value; } break;
+				case "symbol" : { symbol = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -173,7 +173,7 @@ struct TechniqueCommon
 {
 	InstanceMaterial[] instanceMaterials;
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "technique_common" );
@@ -203,7 +203,7 @@ struct BindMaterial
 	//[] techniques;
 	//[] extra;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "bind_material" );
@@ -245,7 +245,7 @@ struct InstanceGeometry
 	BindMaterial bindMaterial;
 	//[] extra;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "instance_geometry" );
@@ -259,11 +259,11 @@ struct InstanceGeometry
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "sid"  : { sid  = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
-				case "url"  : { url  = attr[1]; } break;
+				case "sid"  : { sid  = attr.value; } break;
+				case "name" : { name = attr.value; } break;
+				case "url"  : { url  = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -290,7 +290,7 @@ struct InstanceController
 	BindMaterial bindMaterial;
 	//[] extra;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "instance_controller" );
@@ -304,11 +304,11 @@ struct InstanceController
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "sid"  : { sid  = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
-				case "url"  : { url  = attr[1]; } break;
+				case "sid"  : { sid  = attr.value; } break;
+				case "name" : { name = attr.value; } break;
+				case "url"  : { url  = attr.value; } break;
 				default : {} break;
 			}
 		}	

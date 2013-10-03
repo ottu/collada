@@ -21,7 +21,7 @@ struct TypeArray(T) if ( is(T == int) || is(T == float) || is(T == bool) || is(T
 	T[] value;
 	alias value this;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		string type = is( T == string ) ? "Name" : T.stringof;
@@ -37,11 +37,11 @@ struct TypeArray(T) if ( is(T == int) || is(T == float) || is(T == bool) || is(T
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "count" : { count = to!int(attr[1]); } break;
-				case "id"    : { id    = attr[1]; } break;
-				case "name"  : { name  = attr[1]; } break;
+				case "count" : { count = to!int(attr.value); } break;
+				case "id"    : { id    = attr.value; } break;
+				case "name"  : { name  = attr.value; } break;
 				case "digits"    : {} break;
 				case "magnitude" : {} break;
 				default : {} break;
@@ -78,7 +78,7 @@ struct Param
 	ARRAYTYPE type = ARRAYTYPE.NONE;
 	string semantic;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "param" );
@@ -92,13 +92,13 @@ struct Param
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "name" : { name = attr[1]; } break;
-				case "sid"  : { sid = attr[1]; } break;
+				case "name" : { name = attr.value; } break;
+				case "sid"  : { sid = attr.value; } break;
 				case "type" :
 				{
-					switch( attr[1] )
+					switch( attr.value )
 					{
 						case "Name"  : { type = ARRAYTYPE.NAME; } break;
 						case "bool"  : { type = ARRAYTYPE.BOOL; } break;
@@ -108,7 +108,7 @@ struct Param
 						default : { throw new Exception( "Param type switch faild." ); } break;
 					}
 				} break;
-				case "semantic" : { semantic = attr[1]; } break;
+				case "semantic" : { semantic = attr.value; } break;
 				default : { throw new Exception( "Param attribute switch faild." ); } break;
 			}
 		}	
@@ -123,7 +123,7 @@ struct Accessor
 	int stride = 1;
 	Param[] params;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "accessor" );
@@ -138,12 +138,12 @@ struct Accessor
 	{
 		foreach( attr; xml.attrs )		
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "count" : { count = to!int(attr[1]); } break;
-				case "offset" : { offset = to!int(attr[1]); } break;
-				case "source" :	{ source = attr[1]; } break;
-				case "stride" : { stride = to!int(attr[1]); } break;
+				case "count" : { count = to!int(attr.value); } break;
+				case "offset" : { offset = to!int(attr.value); } break;
+				case "source" :	{ source = attr.value; } break;
+				case "stride" : { stride = to!int(attr.value); } break;
 				default : {} break;
 			}
 		}	
@@ -161,7 +161,7 @@ struct TechniqueCommon
 {
 	Accessor accessor;
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "technique_common" );
@@ -201,7 +201,7 @@ struct Source
 	TechniqueCommon common;
 	Technique[] techniques;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "source" );
@@ -215,10 +215,10 @@ struct Source
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -369,7 +369,7 @@ struct Input(INPUTTYPE type)
 	SEMANTICTYPE semantic = SEMANTICTYPE.NONE;
 	string source;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "input" );
@@ -396,17 +396,17 @@ struct Input(INPUTTYPE type)
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
 				static if( type == INPUTTYPE.B )
 				{
-				case "offset" : { offset = to!int( attr[1] ); } break;
-				case "set"    : { set = to!int( attr[1] ); } break;
+				case "offset" : { offset = to!int( attr.value ); } break;
+				case "set"    : { set = to!int( attr.value ); } break;
 				}
 				
 				case "semantic" :
 				{				
-					switch( attr[1] )
+					switch( attr.value )
 					{
 						case "BINORMAL"        : { semantic = SEMANTICTYPE.BINORMAL; } break;
 						case "COLOR"           : { semantic = SEMANTICTYPE.COLOR; } break;
@@ -431,11 +431,11 @@ struct Input(INPUTTYPE type)
 						case "UV"              : { semantic = SEMANTICTYPE.UV; } break;
 						case "VERTEX"          : { semantic = SEMANTICTYPE.VERTEX; } break;
 						case "WEIGHT"          : { semantic = SEMANTICTYPE.WEIGHT; } break;
-						default : { throw new Exception( "Input semantic switch [" ~ attr[1] ~ "] failed." ); } break;						 
+						default : { throw new Exception( "Input semantic switch [" ~ attr.value ~ "] failed." ); } break;						 
 					}
 				} break;		
 			
-				case "source" : { source   = attr[1]; } break;
+				case "source" : { source   = attr.value; } break;
 				
 				default : { throw new Exception( "Input element switch failed." ); } break;
 			}

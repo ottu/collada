@@ -26,7 +26,7 @@ enum PROFILETYPE : byte
 struct ProfileBRIDGE
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -44,7 +44,7 @@ struct ProfileBRIDGE
 struct ProfileCG
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -62,7 +62,7 @@ struct ProfileCG
 struct ProfileGLES
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -80,7 +80,7 @@ struct ProfileGLES
 struct ProfileGLES2
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -98,7 +98,7 @@ struct ProfileGLES2
 struct ProfileGLSL
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -132,7 +132,7 @@ struct Surface
 	string initFrom;
 	string format;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "surface" );
@@ -144,9 +144,9 @@ struct Surface
 	}
 	body
 	{
-		if( xml.attrs[0][0] == "type" )
+		if( xml.attrs[0].name == "type" )
 		{
-			switch( xml.attrs[0][1] )
+			switch( xml.attrs[0].value )
 			{
 				case "UNTYPED" : { type = SURFACETYPE.UNTYPED; } break;
 				case "1D"      : { type = SURFACETYPE.ONED;     } break;
@@ -186,7 +186,7 @@ struct Sampler2D
 	int    mipmap_bias = 0;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "sampler2D" );
@@ -243,7 +243,7 @@ struct NewParamCOMMON
 	}
 	NEWPARAMTYPE type = NEWPARAMTYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "newparam" );
@@ -256,8 +256,8 @@ struct NewParamCOMMON
 	}
 	body
 	{
-		if( xml.attrs[0][0] == "sid" )
-			sid = xml.attrs[0][1];
+		if( xml.attrs[0].name == "sid" )
+			sid = xml.attrs[0].value;
 			
 		foreach( elem; xml.elems )
 		{
@@ -328,7 +328,7 @@ struct TechniqueCOMMON
 	SHADERELEMENTTYPE type = SHADERELEMENTTYPE.NONE;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "technique" );
@@ -344,10 +344,10 @@ struct TechniqueCOMMON
 	
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"  : { id  = attr[1]; } break;
-				case "sid" : { sid = attr[1]; } break;
+				case "id"  : { id  = attr.value; } break;
+				case "sid" : { sid = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -399,7 +399,7 @@ struct ProfileCOMMON
 	TechniqueCOMMON technique;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "profile_COMMON" );
@@ -411,9 +411,9 @@ struct ProfileCOMMON
 	}
 	body
 	{
-		if( ( xml.attrs.length > 0 ) && ( xml.attrs[0][0] == "id") )
+		if( ( xml.attrs.length > 0 ) && ( xml.attrs[0].name == "id") )
 		{
-			id = xml.attrs[0][1];
+			id = xml.attrs[0].value;
 		}
 		
 		foreach( elem; xml.elems )
@@ -451,7 +451,7 @@ struct Profile
 	
 	PROFILETYPE type = PROFILETYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( [ "profile_BRIDGE", "profile_CG", "profile_GLES", 
@@ -518,7 +518,7 @@ struct Effect
 	Profile[] profiles;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "effect" );
@@ -531,10 +531,10 @@ struct Effect
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception("Element attribute switch fault."); } break;
 			}
 		}
@@ -573,7 +573,7 @@ struct LibraryEffects
 	Effect[] effects;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_effects" );
@@ -586,10 +586,10 @@ struct LibraryEffects
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception("LibraryEffects attribute switch fault."); } break;
 			}
 		}

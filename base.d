@@ -16,7 +16,7 @@ struct SIDValue
 	float value = float.nan;
 	alias value this;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.texts.length == 1 );
@@ -29,8 +29,8 @@ struct SIDValue
 	{
 		if( xml.attrs.length == 1 )
 		{
-			assert( xml.attrs[0][0] == "sid" );
-			this.sid = xml.attrs[0][1];
+			assert( xml.attrs[0].name == "sid" );
+			this.sid = xml.attrs[0].value;
 		}
 		
 		this.value = to!float( xml.texts[0] );
@@ -44,7 +44,7 @@ struct FloatCount(int count)
 	float[count] value;
 	alias value this;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		//assert( xml.tag == "color" );
@@ -83,7 +83,7 @@ struct Texture
 	string texcoord;
 	//[]extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "texture" );
@@ -99,10 +99,10 @@ struct Texture
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "texture"  : { texture  = attr[1]; } break;
-				case "texcoord" : { texcoord = attr[1]; } break;
+				case "texture"  : { texture  = attr.value; } break;
+				case "texcoord" : { texcoord = attr.value; } break;
 				default : { throw new Exception("Texture(base) attribure switch faild." ); } break;
 			}
 		}
@@ -120,7 +120,7 @@ struct CommonColorOrTextureType
 	
 	COLORTEXTURETYPE type = COLORTEXTURETYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( [ "ambient", "diffuse", "emission", 
@@ -177,7 +177,7 @@ struct CommonFloatOrParamType
 	
 	FLOATPARAMTYPE type = FLOATPARAMTYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		//assert( [ "shininess", "reflectivity", "transparency", "index_of_refraction" ].find!( xml.tag ) != [] );
@@ -211,7 +211,7 @@ struct CommonFloatOrParamType
 struct Constant
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "constant" );
@@ -230,7 +230,7 @@ struct Constant
 struct Lambert
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "lambert" );
@@ -259,7 +259,7 @@ struct Phong
 	CommonFloatOrParamType   transparency;
 	CommonFloatOrParamType   index_of_refraction;	
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "phong" );
@@ -294,7 +294,7 @@ struct Phong
 struct Blinn
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "blinn" );

@@ -3,7 +3,7 @@ module collada.scene;
 import collada.transform;
 import collada.instance;
 
-import std.string : tolower;
+import std.string : toLower;
 
 version( unittest )
 {
@@ -26,9 +26,9 @@ struct Node
 	template makeCode(string s, string t)
 	{
 		enum string makeCode = 
-			s ~ " " ~ s.tolower ~ "; " ~
-			s.tolower ~ ".load( elem ); " ~
-			t ~ " ~= " ~ s.tolower ~ ";";
+			s ~ " " ~ s.toLower ~ "; " ~
+			s.toLower ~ ".load( elem ); " ~
+			t ~ " ~= " ~ s.toLower ~ ";";
 	}
 
 	string id;
@@ -54,7 +54,7 @@ struct Node
 	Node[] nodes;
 	//[] extra;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "node" );
@@ -67,14 +67,14 @@ struct Node
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
-				case "sid"  : { sid = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
+				case "sid"  : { sid = attr.value; } break;
 				case "type" : 
 				{
-					switch( attr[1] )
+					switch( attr.value )
 					{
 						case "NODE"  : { type = NODETYPE.NODE;  } break;
 						case "JOINT" : { type = NODETYPE.JOINT; } break;
@@ -172,7 +172,7 @@ struct VisualScene
 	//[] evaluateScenes;
 	//[] extra
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "visual_scene" );
@@ -185,10 +185,10 @@ struct VisualScene
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -222,7 +222,7 @@ struct LibraryVisualScenes
 	VisualScene[] visualScenes;
 	//[]extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_visual_scenes" );
@@ -235,10 +235,10 @@ struct LibraryVisualScenes
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}

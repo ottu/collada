@@ -246,8 +246,8 @@ struct WrappedInputB(T) if ( is(T==float) || is(T==int) || is(T==bool) )
         {
             //PMDはコメントアウト
             //PMXはコメントアウト外す
-            //for( int i = 1; i < _init.length; i += 2 )
-            //    _init[i] *= -1;
+            for( int i = 1; i < _init.length; i += 2 )
+                _init[i] *= -1;
         }
         
         _values = _init.dup;
@@ -312,9 +312,9 @@ struct WrappedTriangles(T) if ( is(T==float) || is(T==int) )
         glEnableClientState( GL_NORMAL_ARRAY );
         glEnableClientState( GL_TEXTURE_COORD_ARRAY );
         
-        glVertexPointer( 3, GL_FLOAT, 0, _inputs[0]._values );
-        glNormalPointer( GL_FLOAT, 0, _inputs[1]._values );
-        glTexCoordPointer( 2, GL_FLOAT, 0, _inputs[2]._values );
+        glVertexPointer( 3, GL_FLOAT, 0, _inputs[0]._values.ptr );
+        glNormalPointer( GL_FLOAT, 0, _inputs[1]._values.ptr );
+        glTexCoordPointer( 2, GL_FLOAT, 0, _inputs[2]._values.ptr );
         
         glDrawArrays( GL_TRIANGLES, 0, 3*_self.count );
 
@@ -395,7 +395,7 @@ struct WrappedMesh(T) if ( is(T==float) || is(T==int) )
         
         _wsources = wss;
         
-        _wtriangles = _self.triangles.map!( (a) => a.wrapTriangles!T( _wsources[] ) ).array;
+        _wtriangles = _self.triangles.map!( (a) => a.wrapTriangles!T( _wsources ) ).array;
         
         writeln( "done!" );
     }
@@ -1854,9 +1854,9 @@ auto wrapNode( Node node, WrappedGeometry* geometry, WrappedMaterials* materials
 
 struct IKConfig
 {
-    XMLValue self;
+    XMLElement self;
 
-    this( XMLValue xml )
+    this( XMLElement xml )
     {
         self = xml;
     }
@@ -1879,18 +1879,18 @@ struct IKConfig
     
         foreach( ik; self.elems )
         {
-            assert( ik.attrs[1][0] == "target" );
-            auto ikEffect = findBone( bone, ik.attrs[1][1] );
+            assert( ik.attrs[1].name == "target" );
+            auto ikEffect = findBone( bone, ik.attrs[1].value );
             ikEffect.isIK = true;
             
-            assert( ik.attrs[0][0] == "name" );
-            ikEffect.IKTarget = findBone( bone, ik.attrs[0][1] );
-            assert( ik.attrs[2][0] == "chain" );
-            ikEffect.IKChain = ik.attrs[2][1].to!int;
-            assert( ik.attrs[3][0] == "iterations" );
-            ikEffect.IKIterations = ik.attrs[3][1].to!int;
-            assert( ik.attrs[4][0] == "weight" );
-            ikEffect.IKWeight = ik.attrs[4][1].to!float * PI;
+            assert( ik.attrs[0].name == "name" );
+            ikEffect.IKTarget = findBone( bone, ik.attrs[0].value );
+            assert( ik.attrs[2].name == "chain" );
+            ikEffect.IKChain = ik.attrs[2].value.to!int;
+            assert( ik.attrs[3].name == "iterations" );
+            ikEffect.IKIterations = ik.attrs[3].value.to!int;
+            assert( ik.attrs[4].name == "weight" );
+            ikEffect.IKWeight = ik.attrs[4].value.to!float * PI;
         }
     }
 }
@@ -1949,8 +1949,8 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        //auto ikConfig = IKConfig( parseXML( import( "AppearanceMikuA_ik.config" ) ).root );
-        auto ikConfig = IKConfig( parseXML( import( "Lat_White_ne_ik.config" ) ).root );
+        auto ikConfig = IKConfig( parseXML( import( "AppearanceMikuA_ik.config" ) ).root );
+        //auto ikConfig = IKConfig( parseXML( import( "Lat_White_ne_ik.config" ) ).root );
         //auto ikConfig = IKConfig( parseXML( import( "Lat_Normal_ik.config" ) ).root );
         //auto ikConfig = IKConfig( parseXML( import( "Ver2_ik.config" ) ).root );
         ikConfig.set( &bone );

@@ -35,7 +35,7 @@ struct Image
 	//imager
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "image" );
@@ -48,10 +48,10 @@ struct Image
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id   = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id   = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default     : { throw new Exception("Image attribute switch fault."); } break;
 			}
 		}
@@ -83,7 +83,7 @@ struct LibraryImages
 	Image[] images;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_images" );
@@ -96,10 +96,10 @@ struct LibraryImages
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception("LibraryImages attribute switch fault"); } break;
 			}
 		}

@@ -27,7 +27,7 @@ struct Orthographic
 	SIDValue znear;
 	SIDValue zfar;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "orthographic" );
@@ -64,7 +64,7 @@ struct Perspective
 	SIDValue znear;
 	SIDValue zfar;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in 
 	{
 		assert( xml.tag == "perspective" );
@@ -103,7 +103,7 @@ struct TechniqueCommon
 	
 	CAMERATYPE type = CAMERATYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in 
 	{
 		assert( xml.tag == "technique_common" );
@@ -146,7 +146,7 @@ struct Optics
 	//[] technique
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in 
 	{
 		assert( xml.tag == "optics" );
@@ -181,7 +181,7 @@ struct Camera
 	//imager
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "camera" );
@@ -194,10 +194,10 @@ struct Camera
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id   = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id   = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default     : {} break;
 			}
 		}
@@ -225,7 +225,7 @@ struct LibraryCameras
 	Camera[] cameras;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_cameras" );
@@ -238,10 +238,10 @@ struct LibraryCameras
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}

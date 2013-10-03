@@ -32,12 +32,12 @@ struct VertexWeights
 	int[] vcount;
 	int[] v;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "vertex_weights" );
 		assert( xml.attrs.length == 1 );
-		assert( xml.attrs[0][0] == "count" );
+		assert( xml.attrs[0].name == "count" );
 		assert( xml.elems.length >= 2 );
 	}
 	out
@@ -47,7 +47,7 @@ struct VertexWeights
 	}
 	body
 	{
-		count = xml.attrs[0][1].to!int;
+		count = xml.attrs[0].value.to!int;
 		
 		foreach( elem; xml.elems )
 		{
@@ -84,7 +84,7 @@ struct Joints
 {
 	InputA[] inputs;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "joints" );
@@ -135,12 +135,12 @@ struct Skin
 	VertexWeights vertex_weights;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "skin" );
 		assert( xml.attrs.length == 1 );
-		assert( xml.attrs[0][0] == "source" );
+		assert( xml.attrs[0].name == "source" );
 		assert( xml.elems.length >= 5 );
 	}
 	out
@@ -149,7 +149,7 @@ struct Skin
 	}
 	body
 	{
-		source = xml.attrs[0][1];
+		source = xml.attrs[0].value;
 		
 		bind_shape_matrix = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
 		
@@ -205,7 +205,7 @@ struct Controller
 	CONTROLLERTYPE type = CONTROLLERTYPE.NONE;	
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "controller" );
@@ -218,10 +218,10 @@ struct Controller
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id   = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id   = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default     : { throw new Exception("Controller attribute switch fault."); } break;
 			}
 		}
@@ -259,7 +259,7 @@ struct LibraryControllers
 	Controller[] controllers;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_controllers" );
@@ -272,10 +272,10 @@ struct LibraryControllers
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : { throw new Exception("LibraryControllers attribute switch fault"); } break;
 			}
 		}

@@ -24,7 +24,7 @@ enum LIGHTTYPE : byte
 struct Ambient
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -42,7 +42,7 @@ struct Ambient
 struct Directional
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -64,7 +64,7 @@ struct Point
 	SIDValue linear;
 	SIDValue quadratic;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "point" );
@@ -94,7 +94,7 @@ struct Point
 struct Spot
 {
 
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 	
@@ -121,7 +121,7 @@ struct Common
 	
 	LIGHTTYPE type = LIGHTTYPE.NONE;
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "technique_common" );
@@ -179,7 +179,7 @@ struct Light
 	//[] technique
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "light" );
@@ -192,10 +192,10 @@ struct Light
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}
@@ -222,7 +222,7 @@ struct LibraryLights
 	Light[] lights;
 	//[] extra
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	in
 	{
 		assert( xml.tag == "library_lights" );
@@ -235,10 +235,10 @@ struct LibraryLights
 	{
 		foreach( attr; xml.attrs )
 		{
-			switch( attr[0] )
+			switch( attr.name )
 			{
-				case "id"   : { id = attr[1]; } break;
-				case "name" : { name = attr[1]; } break;
+				case "id"   : { id = attr.value; } break;
+				case "name" : { name = attr.value; } break;
 				default : {} break;
 			}
 		}

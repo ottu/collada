@@ -33,9 +33,9 @@ class Collada
 	this() { }	
 	~this() { }
 	
-	void load( XMLValue xml )
+	void load( XMLElement xml )
 	{
-		XMLValue[] vals = [];
+		XMLElement[] vals = [];
 		
 		vals = xml.elems.find!( (elem){ return elem.tag == "library_animations"; } );
 		if( vals.length > 0 ) { writeln("animations"); libAnimations.load( vals[0] ); }
