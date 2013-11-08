@@ -21,7 +21,6 @@ import collada.instance;
 import collada.scene;
 import collada.transform;
 import collada.animation;
-import collada.modelutils;
 
 import adjustxml;
 
@@ -32,26 +31,50 @@ import opengl.glfw;
 import derelict.devil.il;
 import derelict.devil.ilu;
 
-float[16] transpose( float[] matrix )
+import gl3n.linalg;
+import gl3n.interpolate;
+
+
+vec3 getVertex( WrappedBone* b )
 {
-    assert( matrix.length == 16 );
-    return [ matrix[0], matrix[4], matrix[8],  matrix[12], 
-             matrix[1], matrix[5], matrix[9],  matrix[13], 
-             matrix[2], matrix[6], matrix[10], matrix[14], 
-             matrix[3], matrix[7], matrix[11], matrix[15] ];
+    vec4 cv = vec4( 0.0, 0.0, 0.0, 1.0 );
+    //vec4 cv = vec4( b.matrix[0][3], b.matrix[1][3], b.matrix[2][3], 1.0 );
+    //if( cv.x != 0.0 ) cv.x *= -1;
+    //if( cv.y != 0.0 ) cv.y *= -1;
+    //if( cv.z != 0.0 ) cv.z *= -1;
+
+    //cv = cv * b.matrix;
+    cv = cv * b.pose;
+
+    auto p = b.parent;
+    while( p != null )
+    {
+        cv = cv * p.pose;
+        p = p.parent;
+    }
+
+    return vec3( cv );
 }
 
-void multr( ref float[4] v1, ref const float[16] v2 )
+void multr( ref float[4] v, ref const mat4 mat )
 {
-    float v10 = v1[0];
-    float v11 = v1[1];
-    float v12 = v1[2];
-    float v13 = v1[3];
+    float v0 = v[0];
+    float v1 = v[1];
+    float v2 = v[2];
+    float v3 = v[3];
+
+    auto m = mat.matrix;
     
-    v1[0] = v10*v2[0] + v11*v2[4] + v12*v2[8]  + v13*v2[12];
-    v1[1] = v10*v2[1] + v11*v2[5] + v12*v2[9]  + v13*v2[13];
-    v1[2] = v10*v2[2] + v11*v2[6] + v12*v2[10] + v13*v2[14];
-    v1[3] = v10*v2[3] + v11*v2[7] + v12*v2[11] + v13*v2[15];
+    //v[0] = v0*m[0][0] + v1*m[1][0] + v2*m[2][0] + v3*m[3][0];
+    //v[1] = v0*m[0][1] + v1*m[1][1] + v2*m[2][1] + v3*m[3][1];
+    //v[2] = v0*m[0][2] + v1*m[1][2] + v2*m[2][2] + v3*m[3][2];
+    //v[3] = v0*m[0][3] + v1*m[1][3] + v2*m[2][3] + v3*m[3][3];
+
+    v[0] = v0*m[0][0] + v1*m[0][1] + v2*m[0][2] + v3*m[0][3];
+    v[1] = v0*m[1][0] + v1*m[1][1] + v2*m[1][2] + v3*m[1][3];
+    v[2] = v0*m[2][0] + v1*m[2][1] + v2*m[2][2] + v3*m[2][3];
+    v[3] = v0*m[3][0] + v1*m[3][1] + v2*m[3][2] + v3*m[3][3];
+
 }
 
 template isPermitted(T)
@@ -92,45 +115,55 @@ struct WrappedSource(T) if ( isPermitted!T )
         
         T*[][] _triRefs;
         BW[] _bwRefs;
-        
+
         static if( is( T == float ) )
-        {    
+        {
         float[4] __vertex;
         float[4] __v;
+        //vec4 __vertex;
+        //vec4 __v;
         void calc()
         {
-            
             __vertex[0] = 0.0;
             __vertex[1] = 0.0;
             __vertex[2] = 0.0;
             __vertex[3] = 0.0;
+            //__vertex = vec4( 0.0, 0.0, 0.0, 0.0 );
             
             for( int i = 0; i < _bwRefs.length; ++i )
             {
-                
                 __v[0] = _value[0];
                 __v[1] = _value[1];
                 __v[2] = _value[2];
                 __v[3] = 1.0;
-                
+                //__v = vec4( _value[0], _value[1], _value[2], 1.0 );
+
                 multr( __v, _bwRefs[i]._bone.matrix );
-                //multr( __v, _bwRefs[i]._bone.pp );
                 multr( __v, _bwRefs[i]._bone.pose );
+                //__v = __v * _bwRefs[i]._bone.matrix;
+                //__v = __v * _bwRefs[i]._bone.pose;
                 
                 auto p = _bwRefs[i]._bone.parent;
                 while( p != null )
                 {
                     multr( __v, p.pose );
+                    //__v = __v * p.pose;
                     p = p.parent;
                 }
-                
+
                 __v[0] = __v[0] * _bwRefs[i]._weight;
                 __v[1] = __v[1] * _bwRefs[i]._weight;
                 __v[2] = __v[2] * _bwRefs[i]._weight;
+                //__v.x = __v.x * _bwRefs[i]._weight;
+                //__v.y = __v.y * _bwRefs[i]._weight;
+                //__v.z = __v.z * _bwRefs[i]._weight;
                 
                 __vertex[0] = __vertex[0] + __v[0];
                 __vertex[1] = __vertex[1] + __v[1];
                 __vertex[2] = __vertex[2] + __v[2];
+                //__vertex.x = __vertex.x + __v.x;
+                //__vertex.y = __vertex.y + __v.y;
+                //__vertex.z = __vertex.z + __v.z;
                 
             }
             
@@ -139,6 +172,9 @@ struct WrappedSource(T) if ( isPermitted!T )
                 *(_triRefs[j][0]) = __vertex[0];
                 *(_triRefs[j][1]) = __vertex[1];
                 *(_triRefs[j][2]) = __vertex[2];
+                //*(_triRefs[j][0]) = __vertex.x;
+                //*(_triRefs[j][1]) = __vertex.y;
+                //*(_triRefs[j][2]) = __vertex.z;
             }
             
         }
@@ -975,6 +1011,16 @@ struct WrappedAnimation
     KeyFrame[] _values;
     
     string target;
+
+    float[16] transpose( float[] matrix )
+    {
+        assert( matrix.length == 16 );
+        return [ matrix[0], matrix[4], matrix[8],  matrix[12],
+                 matrix[1], matrix[5], matrix[9],  matrix[13],
+                 matrix[2], matrix[6], matrix[10], matrix[14],
+                 matrix[3], matrix[7], matrix[11], matrix[15] ];
+    }
+
     
     this( Animation animation )
     {
@@ -994,7 +1040,9 @@ struct WrappedAnimation
         {
             KeyFrame keyframe;
             keyframe.time = time._value[0];
-            keyframe.pose = transpose( pose._value );
+            // OpenGL
+            //keyframe.pose = transpose( pose._value );
+            keyframe.pose = pose._value;
             keyframe.interpolation = interpolation._value[0];
 
             _values ~= keyframe;
@@ -1035,7 +1083,7 @@ auto wrapAnimations( LibraryAnimations libAnimations )
 }
 
 enum Step { NEXT, PREV };
-/+
+
 struct WrappedBone
 {
     WrappedBone*  parent;
@@ -1043,8 +1091,8 @@ struct WrappedBone
     WrappedBone[] children;
     
     string id;
-    float[16] matrix = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
-    float[16] pose = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
+    mat4 matrix = mat4.identity;
+    mat4 pose   = mat4.identity;
     
     //アニメーション計算用
     WrappedAnimation.KeyFrame[] keyframes;
@@ -1062,7 +1110,13 @@ struct WrappedBone
     //さかのぼれる限りの親と自分の poseを乗算した結果
     //これを持っておけば子の pose計算時に毎回親をさかのぼる必要が無くなり
     //(親の pp x 自分の pose だけで済む) 計算量が減らせる。
-    float[16] pp = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
+    //mat4 pp = mat4.identity;
+
+    mat4 toMat4( const float[] m )
+    {
+        assert( m.length == 16 );
+        return mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
+    }
     
     //constructor内で childに親情報として &thisを渡そうと思ったが
     //アドレスが何処かで置き換えられるらしく正常な参照先を渡せないので
@@ -1074,8 +1128,17 @@ struct WrappedBone
         id = node.id;
         
         assert( node.matrixes.length == 1 );
-        pose = transpose( node.matrixes[0] ); 
+        pose = toMat4( node.matrixes[0] );
+
+        writeln( node.matrixes[0] );
+        writeln( pose );
         
+        // OpenGL
+        //pose.transpose;
+
+        writeln( pose );
+        writeln( "" );
+
         writefln( "Bone [%s] loaded!", _self.id );
         
         foreach( child; node.nodes )
@@ -1110,8 +1173,11 @@ struct WrappedBone
         if( _self.id in controller.skin.result )
         {
             auto result = controller.skin.result[ _self.id ];
-            matrix = transpose( result.matrix );
+            matrix = toMat4( result.matrix );
             
+            // OpenGL
+            //matrix.transpose;
+
             foreach( vw; result.vws )
                 source._accessor[ vw.index ]._bwRefs ~= WrappedSource!float.BW( &this, vw.weight );
             
@@ -1168,15 +1234,15 @@ struct WrappedBone
             {
                 float t = time - s.time;
                 t /= e.time - s.time;
+
+                mat4 sm = toMat4( s.pose );
+                mat4 em = toMat4( e.pose );
                 
-                float[3] st = s.pose[12..15];
-                float[3] et = e.pose[12..15];
-                float[3] trans = Lerp( st, et, t );
-                //float[3] trans = ( st == et ) ? st : Lerp( st, et, t );
-                
-                Quaternion sq = s.pose.toQuaternion;
-                Quaternion eq = e.pose.toQuaternion;
-                
+                quat sq = quat.from_matrix( sm.rotation );
+                //if( sq.w < 0.0 ) sq.invert;
+                quat eq = quat.from_matrix( em.rotation );
+                //if( eq.w < 0.0 ) eq.invert;
+
                 if( eq.x < 0.0 ) {
                     if( sq.x == 1 ) sq.x = -1;
                 } else {
@@ -1192,332 +1258,17 @@ struct WrappedBone
                 } else {
                     if( sq.z == -1 ) sq.z = 1;
                 }
-                
-                float[16] mat = Slerp( sq, eq, t ).toMatrix();
-                //float[16] mat = ( sq == eq ) ? s.pose : Slerp( sq, eq, t ).toMatrix();
-                
-                mat[12..15] = trans;
-                pose = mat;
-/+
-                if( ( id == "左足IK" ) || ( id == "右足IK" ) )
-                {
-                writeln( "----- id : ", id, " -----" );
-                writeln( "t : ", t );
-                writeln( "s.pose : ", s.pose );
-                writeln( "e.pose : ", e.pose );
-                writeln( "sq : ", sq );
-                writeln( "eq : ", eq );
-                writeln( "slerp : ", Slerp( sq, eq, t ) );
-                writeln( "pose : ", pose );
-                writeln( "" );
-                }
-+/
-                
-            }
-            else
-                pose = s.pose;
-                
-        }
-        
-        if( parent == null )
-            pp = pose;
-        else
-            pp = multMatrix( pose, parent.pp );
-        
-        //foreach( ref child; taskPool.parallel( children ) )
-        foreach( ref child; children )
-            child.calcPose( step, time );
-            
-    }
 
-    void calcIK()
-    {
-        float[3] getVertex( WrappedBone* b )
-        {
-            float[4] cv = b.matrix[12..15] ~ 1.0 ;
-            if( cv[0] != 0.0 ) cv[0] *= -1;
-            if( cv[1] != 0.0 ) cv[1] *= -1;
-            if( cv[2] != 0.0 ) cv[2] *= -1;
-            
-            multr( cv, b.matrix );
-            multr( cv, b.pose );
-            
-            auto p = b.parent;
-            while( p != null )
-            {
-                multr( cv, p.pose );
-                p = p.parent;
-            }
+                pose.rotation( slerp( sq, eq, t ).to_matrix!(3,3) );
 
-            return [ cv[0], cv[1], cv[2] ];
-        }
+                mat4 st = sm.translation;
+                mat4 et = em.translation;
 
-        if( isIK )
-        //if( ( isIK ) && ( (id == "右足ＩＫ") || (id == "左足ＩＫ") ) )
-        //if( ( isIK ) && (id == "右足ＩＫ") )
-        //if( ( isIK ) && ( id == "ﾈｸﾀｲＩＫ" ) )
-        {
-            //writeln( "" );
-            //writeln( "---------- IK.id : ", this.id, " ----------" );
-            for( int i = 0; i < IKIterations; ++i )
-            {
-                auto effector = &(IKTarget.children[0]);
-                auto joint = effector.parent;
-                
-                for( int j = 0; j < IKChain; ++j )
-                {
-                    float[3] before = getVertex( effector );
-                    before[] -= getVertex( joint )[];
-                    normalize( before );
-                    
-                    float[3] after = getVertex( &this );
-                    after[] -= getVertex( joint )[];
-                    normalize( after );
-                    
-                    float[3] axis = cross( before, after );
-                    if( axis != [ 0.0, 0.0, 0.0 ] )
-                    {
-                        normalize( axis );
-                        float radian = acos( clamp( dot( before, after ), -1.0, 1.0 ) );
-                
-                        //if( radian > 1.0e-5f )
-                        {
-                            Quaternion q1 = makeQuaternion( axis, radian );
-                            Quaternion q2 = joint.pose.toQuaternion();
-                            
-                            if( (joint.id == "左ひざ") || (joint.id == "右ひざ") )
-                            {
-/+        
-                                float[3] max = getVertex( joint );
-                                max[] -= getVertex( joint.parent )[];
-                                normalize( max );
-                                
-                                float[3] maxAxis = cross( before, max );
-                                normalize( maxAxis );
-                                float maxRadian = acos( clamp( dot( before, max ), -1.0, 1.0 ) );
-                                
-                                //assert( axis == maxAxis );
-                                writeln( "axis : ", axis );
-                                writeln( "max  : ", maxAxis );
-                                writeln( "radian : ", radian );
-                                writeln( "max    : ", maxRadian );
-                            
-                                assert( axis[0] != 0.0 );
-                                if( axis[0] > 0.0 )
-                                {
-                                    if( radian < maxRadian )
-                                        radian = maxRadian;
-                                }
-                                else
-                                {
-                                    if( radian > maxRadian )
-                                        radian = maxRadian;
-                                }
-                            
-                                q1 = makeQuaternion( axis, radian );
-+/                                
-                                float[3] euler = q1.toEuler();
-                                float zero = 0.0;
-                                q1 = makeQuaternion( zero, zero, euler[2] );
-                                
-                                //膝回転制限
-                                //if( q1.x < 0.0 ) q1.x = 0.0; 
-                                //if( q.x > 0.9 ) q.x = 0.9; 
-                                //q.normalize();
-                            }
-                            
-                            float[16] qmat = multQuaternion( q1, q2 ).toMatrix();
-                            qmat[12..15] = joint.pose[12..15];
-        
-                            joint.pose = qmat;
+                mat4 ct = mat4.translation( lerp( st[0][3], et[0][3], t ),
+                                            lerp( st[1][3], et[1][3], t ),
+                                            lerp( st[2][3], et[2][3], t ) );
+                pose.translation( ct );
 
-                            writeln( joint.id );
-                            writeln(  "ikpos         : ", getVertex( &this ) );
-                            writefln( "effector[%s]  : %s", effector.id.toMBSz.to!string, getVertex( effector ) );
-                            writefln( "joint[%s]     : %s", joint.id, getVertex( joint ) );
-                            writeln(  "before vector : ", before );
-                            writeln(  "after vector  : ", after );
-                            writeln(  "axis          : ", axis );
-                            writeln(  "radian        : ", radian );
-                            //writeln(  "angle         : ", radian * 180 / PI );
-                            //writeln( "after joint.pose", joint.pose );
-
-
-                        }                        
-
-                    }
-                    joint = joint.parent;
-
-                }//for IKChain
-            }//for IKIterations
-        }//if( isIK )
-
-        foreach( ref child; children )
-            //if( child.isIK )
-                child.calcIK();
-    }//calcIK
-
-}
-+/
-
-struct WrappedBone
-{
-    WrappedBone*  parent;
-    Node          _self; 
-    WrappedBone[] children;
-    
-    string id;
-    Matrix4x4 matrix = identity4x4;
-    Matrix4x4 pose   = identity4x4;
-    
-    //アニメーション計算用
-    WrappedAnimation.KeyFrame[] keyframes;
-    bool hasAnimation = false;
-    uint startIndex = -1;
-    uint endIndex = -1;
-    
-    //IK計算用
-    bool isIK = false;
-    WrappedBone* IKTarget;
-    int IKChain;
-    int IKIterations;
-    float IKWeight;
-
-    //さかのぼれる限りの親と自分の poseを乗算した結果
-    //これを持っておけば子の pose計算時に毎回親をさかのぼる必要が無くなり
-    //(親の pp x 自分の pose だけで済む) 計算量が減らせる。
-    Matrix4x4 pp = identity4x4;
-    
-    //constructor内で childに親情報として &thisを渡そうと思ったが
-    //アドレスが何処かで置き換えられるらしく正常な参照先を渡せないので
-    //その処理か下記の connectKeyFramesで合わせて行う。
-    this( Node node )
-    {
-        _self = node;
-        
-        id = node.id;
-        
-        assert( node.matrixes.length == 1 );
-        pose = transpose( node.matrixes[0] ); 
-        
-        writefln( "Bone [%s] loaded!", _self.id );
-        
-        foreach( child; node.nodes )
-            children ~= child.wrapBone;
-    }
-
-    //選択されたアニメーションをモデルに読み込む
-    void connectKeyFrames( WrappedAnimations* animations )
-    {
-        foreach( ref animation; animations.animations )
-        {
-            if( animation.target != _self.id ) continue;
-            keyframes = animation._values;
-            hasAnimation = true;
-            assert( keyframes.length >= 2 );
-            startIndex = 0;
-            endIndex = 1;
-            
-            writefln( "Bone [%s] keyframes connected!", _self.id );
-            break;
-        }
-        
-        foreach( ref child; children )
-        {
-            child.parent = &this;
-            child.connectKeyFrames( animations );
-        }
-    }
-    
-    void connectVertexWeights( WrappedSource!(float)* source, WrappedController* controller )
-    {
-        if( _self.id in controller.skin.result )
-        {
-            auto result = controller.skin.result[ _self.id ];
-            matrix = transpose( result.matrix );
-            
-            foreach( vw; result.vws )
-                source._accessor[ vw.index ]._bwRefs ~= WrappedSource!float.BW( &this, vw.weight );
-            
-            writefln( "Bone [%s] vertex weights connected!", _self.id );
-        }
-        else
-        {
-            writefln( "%s's skin not found.", _self.id );
-        }
-        
-        foreach( ref child; children )
-            child.connectVertexWeights( source, controller );
-    }
-
-    void calcPose( Step step, ref const float time )
-    {
-        
-        if( hasAnimation )
-        {
-
-            final switch( step )
-            {
-                case Step.NEXT :
-                {
-                    while( time > keyframes[ endIndex ].time )
-                    {
-                        if( endIndex < keyframes.length -1 )
-                        {
-                            startIndex++;
-                            endIndex++;
-                        }
-                        else break;
-                    }
-                } break;
-
-                case Step.PREV :
-                {
-                    while( keyframes[ startIndex ].time > time )
-                    {
-                        if( startIndex > 0 )
-                        {
-                            startIndex--;
-                            endIndex--;
-                        }
-                        else break;
-                    }
-                } break;
-            }
-
-            auto s = &(keyframes[startIndex]);
-            auto e = &(keyframes[endIndex]);
-            
-            if( s.pose != e.pose )
-            {
-                float t = time - s.time;
-                t /= e.time - s.time;
-                
-                Quaternion sq = Matrix4x4( s.pose ).getTransform.toQuaternion;
-                Quaternion eq = Matrix4x4( e.pose ).getTransform.toQuaternion;
-                
-                if( eq.x < 0.0 ) {
-                    if( sq.x == 1 ) sq.x = -1;
-                } else {
-                    if( sq.x == -1 ) sq.x = 1;
-                }
-                if( eq.y < 0.0 ) {
-                    if( sq.y == 1 ) sq.y = -1;
-                } else {
-                    if( sq.y == -1 ) sq.y = 1;
-                }
-                if( eq.z < 0.0 ) {
-                    if( sq.z == 1 ) sq.z = -1;
-                } else {
-                    if( sq.z == -1 ) sq.z = 1;
-                }
-                
-                Vector3 sv = Matrix4x4( s.pose ).getOrigin;
-                Vector3 ev = Matrix4x4( e.pose ).getOrigin;
-                
-                pose.setTransform( Slerp( sq, eq, t ).toMatrix3x3 );
-                pose.setOrigin( Lerp( sv, ev, t ) );
-                
 /+                
                 if( ( id == "左足IK" ) || ( id == "右足IK" ) )
                 {
@@ -1535,14 +1286,14 @@ struct WrappedBone
                 
             }
             else
-                pose = s.pose;
+                pose = toMat4( s.pose );
                 
         }
         
-        if( parent == null )
-            pp = pose;
-        else
-            pp = multMatrix( pose, parent.pp );
+        //if( parent == null )
+        //    pp = pose;
+        //else
+        //    pp = pose * parent.pp;
         
         //foreach( ref child; taskPool.parallel( children ) )
         foreach( ref child; children )
@@ -1552,25 +1303,6 @@ struct WrappedBone
 
     void calcIK()
     {
-        float[3] getVertex( WrappedBone* b )
-        {
-            float[4] cv = b.matrix[12..15] ~ 1.0 ;
-            if( cv[0] != 0.0 ) cv[0] *= -1;
-            if( cv[1] != 0.0 ) cv[1] *= -1;
-            if( cv[2] != 0.0 ) cv[2] *= -1;
-            
-            multr( cv, b.matrix );
-            multr( cv, b.pose );
-            
-            auto p = b.parent;
-            while( p != null )
-            {
-                multr( cv, p.pose );
-                p = p.parent;
-            }
-
-            return [ cv[0], cv[1], cv[2] ];
-        }
 
         if( isIK )
         {
@@ -1581,33 +1313,76 @@ struct WrappedBone
                 
                 for( int j = 0; j < IKChain; ++j )
                 {
-                    Vector3 before = Vector3( getVertex( effector ) );
-                    before[] -= getVertex( joint )[];
+
+                    vec3 before = getVertex( effector );
+                    before -= getVertex( joint );
                     
-                    Vector3 after = Vector3( getVertex( &this ) );
-                    after[] -= getVertex( joint )[];
+                    vec3 after = getVertex( &this );
+                    after -= getVertex( joint );
+
+                    //mat3 inv = joint.pose.rotation;
+                    //inv.invert;
                     
-                    Matrix3x3 inv = joint.pose.getTransform;
-                    //inv = inv.inverse;
+                    //before = before * inv;
+                    //after  = after * inv;
                     
-                    before = before.multMatrix3x3( inv );
-                    after  = after.multMatrix3x3( inv );
+                    before.normalize;
+                    after.normalize;
+
+                    auto angle = acos( dot( before, after ) );
+                    if( angle > IKWeight )
+                        angle = IKWeight;
+                    else if ( angle < -IKWeight )
+                        angle = -IKWeight;
+
+                    if( angle > 1.0e-5 )
+                    {
+                        auto axis = cross( before, after );
+                        axis.normalize;
+
+                        //quat q = quat.axis_rotation( angle, axis );
+                        //mat3 qm = q.to_matrix!(3,3);
+                        //mat3 jm = joint.pose.rotation;
+
+                        //joint.pose.rotation( jm * qm );
+
+                        quat q1 = quat.axis_rotation( angle, axis );
+                        quat q2 = quat.from_matrix( joint.pose.rotation );
+/+
+                        if( ( joint.id == "左ひざ" ) || ( joint.id == "右ひざ" ) )
+                        {
+                            if( i == 0 )
+                            {
+                                if( angle < 0.0f ) angle = -angle;
+                                axis = vec3( 1.0, 0.0, 0.0 );
+                                q1 = quat.axis_rotation( angle, axis );
+                            }
+                            else
+                            {
+                                real[3] e1 = [ q1.yaw, q1.pitch, q1.roll ];
+                                real[3] e2 = [ q2.yaw, q2.pitch, q2.roll ];
+
+                                if( e1[2] + e2[2] > PI )
+                                    e1[2] = PI - e2[2];
+
+                                if( e1[2] + e2[2] < 0.002 )
+                                    e1[2] = 0.002 - e2[2];
+
+                                if( e1[2] > IKWeight )
+                                    e1[2] = IKWeight;
+                                else if ( e1[2] < -IKWeight )
+                                    e1[2] = -IKWeight;
+
+                                q1 = quat.euler_rotation( 0.0, 0.0, e1[2] );
+
+                            }
+                        }
++/
+                        joint.pose.rotation( (q2 * q1).to_matrix!(3,3) );
+
+                    }
                     
-                    normalize( before );
-                    normalize( after );
-                    
-                    Vector3 axis = cross( before, after );
-                    normalize( axis );
-                    
-                    float radian = acos( clamp( dot( before, after ), -1.0, 1.0 ) );
-                    
-                    if( radian > IKWeight )
-                        radian = IKWeight;
-                    else if( radian < -IKWeight )
-                        radian = -IKWeight;
-                        
-                    Quaternion q1 = makeQuaternion( axis, radian );
-                    
+/+
                     if( (joint.id == "左ひざ") || (joint.id == "右ひざ") )
                     {
                         if( i == 0 )
@@ -1637,11 +1412,7 @@ struct WrappedBone
                         
                         }
                     }
-                    
-                    auto qj = joint.pose.getTransform.toQuaternion;
-                    
-                    joint.pose.setTransform( multQuaternion( q1, qj ).toMatrix3x3 );
-
++/
                     joint = joint.parent;
 
                 }//for IKChain
@@ -1651,135 +1422,6 @@ struct WrappedBone
         foreach( ref child; children )
             child.calcIK();
     }//calcIK
-    
-/+    
-    void calcIK()
-    {
-        float[3] getVertex( WrappedBone* b )
-        {
-            float[4] cv = b.matrix[12..15] ~ 1.0 ;
-            if( cv[0] != 0.0 ) cv[0] *= -1;
-            if( cv[1] != 0.0 ) cv[1] *= -1;
-            if( cv[2] != 0.0 ) cv[2] *= -1;
-            
-            multr( cv, b.matrix );
-            multr( cv, b.pose );
-            
-            auto p = b.parent;
-            while( p != null )
-            {
-                multr( cv, p.pose );
-                p = p.parent;
-            }
-
-            return [ cv[0], cv[1], cv[2] ];
-        }
-
-        if( isIK )
-        //if( ( isIK ) && ( (id == "右足ＩＫ") || (id == "左足ＩＫ") ) )
-        //if( ( isIK ) && (id == "右足ＩＫ") )
-        //if( ( isIK ) && ( id == "ﾈｸﾀｲＩＫ" ) )
-        {
-            //writeln( "" );
-            //writeln( "---------- IK.id : ", this.id, " ----------" );
-            for( int i = 0; i < IKIterations; ++i )
-            {
-                auto effector = &(IKTarget.children[0]);
-                auto joint = effector.parent;
-                
-                for( int j = 0; j < IKChain; ++j )
-                {
-                    float[3] before = getVertex( effector );
-                    before[] -= getVertex( joint )[];
-                    normalize( before );
-                    
-                    float[3] after = getVertex( &this );
-                    after[] -= getVertex( joint )[];
-                    normalize( after );
-                    
-                    float[3] axis = cross( before, after );
-                    if( axis != [ 0.0, 0.0, 0.0 ] )
-                    {
-                        normalize( axis );
-                        float radian = acos( clamp( dot( before, after ), -1.0, 1.0 ) );
-                
-                        //if( radian > 1.0e-5f )
-                        {
-                            Quaternion q1 = makeQuaternion( axis, radian );
-                            Quaternion q2 = joint.pose.toQuaternion();
-                            
-                            if( (joint.id == "左ひざ") || (joint.id == "右ひざ") )
-                            {
-/+        
-                                float[3] max = getVertex( joint );
-                                max[] -= getVertex( joint.parent )[];
-                                normalize( max );
-                                
-                                float[3] maxAxis = cross( before, max );
-                                normalize( maxAxis );
-                                float maxRadian = acos( clamp( dot( before, max ), -1.0, 1.0 ) );
-                                
-                                //assert( axis == maxAxis );
-                                writeln( "axis : ", axis );
-                                writeln( "max  : ", maxAxis );
-                                writeln( "radian : ", radian );
-                                writeln( "max    : ", maxRadian );
-                            
-                                assert( axis[0] != 0.0 );
-                                if( axis[0] > 0.0 )
-                                {
-                                    if( radian < maxRadian )
-                                        radian = maxRadian;
-                                }
-                                else
-                                {
-                                    if( radian > maxRadian )
-                                        radian = maxRadian;
-                                }
-                            
-                                q1 = makeQuaternion( axis, radian );
-+/                                
-                                float[3] euler = q1.toEuler();
-                                float zero = 0.0;
-                                q1 = makeQuaternion( zero, zero, euler[2] );
-                                
-                                //膝回転制限
-                                //if( q1.x < 0.0 ) q1.x = 0.0; 
-                                //if( q.x > 0.9 ) q.x = 0.9; 
-                                //q.normalize();
-                            }
-                            
-                            float[16] qmat = multQuaternion( q1, q2 ).toMatrix();
-                            qmat[12..15] = joint.pose[12..15];
-        
-                            joint.pose = qmat;
-
-                            writeln( joint.id );
-                            writeln(  "ikpos         : ", getVertex( &this ) );
-                            writefln( "effector[%s]  : %s", effector.id.toMBSz.to!string, getVertex( effector ) );
-                            writefln( "joint[%s]     : %s", joint.id, getVertex( joint ) );
-                            writeln(  "before vector : ", before );
-                            writeln(  "after vector  : ", after );
-                            writeln(  "axis          : ", axis );
-                            writeln(  "radian        : ", radian );
-                            //writeln(  "angle         : ", radian * 180 / PI );
-                            //writeln( "after joint.pose", joint.pose );
-
-
-                        }                        
-
-                    }
-                    joint = joint.parent;
-
-                }//for IKChain
-            }//for IKIterations
-        }//if( isIK )
-
-        foreach( ref child; children )
-            //if( child.isIK )
-                child.calcIK();
-    }//calcIK
-+/
 
 }
 
@@ -2047,25 +1689,10 @@ struct ColladaModel
     
     void drawBone()
     {
-        void makeBone( WrappedBone current, float[4] pv, int depth = 0 )
+        void makeBone( WrappedBone current, vec3 pv, int depth = 0 )
         {
             
-            float[4] cv;
-            cv[0] = current.matrix[12] == 0.0 ? 0.0 : -current.matrix[12];
-            cv[1] = current.matrix[13] == 0.0 ? 0.0 : -current.matrix[13];
-            cv[2] = current.matrix[14] == 0.0 ? 0.0 : -current.matrix[14];
-            cv[3] = 1.0;
-            
-            multr( cv, current.matrix );
-            //multr( cv, current.pp );
-            multr( cv, current.pose );
-            
-            auto p = current.parent;
-            while( p != null )
-            {
-                multr( cv, p.pose );
-                p = p.parent;
-            }
+            vec3 cv = getVertex( &current );
             
             if( ( current.id == "右足ＩＫ" ) || ( current.id == "右つま先ＩＫ") )
                 glColor3f( 0, 1, 0 );
@@ -2080,18 +1707,18 @@ struct ColladaModel
             if( ( current.id == "左足首先" ) || ( current.id == "左足首" ) ||
                 ( current.id == "左ひざ" ) || ( current.id == "左足" ) )
                 glColor3f( 1, 0, 1 );
-            
+
             glBegin( GL_POINTS );
-            glVertex3f( cv[0], cv[1], cv[2] );
+            glVertex3f( cv.x, cv.y, cv.z );
             glEnd();
             
             glBegin( GL_LINES );
-            glVertex3f( pv[0], pv[1], pv[2] );
-            glVertex3f( cv[0], cv[1], cv[2] );
+            glVertex3f( pv.x, pv.y, pv.z );
+            glVertex3f( cv.x, cv.y, cv.z );
             glEnd();
 
             glColor3f( 0.8, 0.8, 0.8 );
-            
+/+
             if( ( current.id == "左ひざ" ) || ( current.id == "左足" ) || 
                 ( current.id == "右ひざ" ) || ( current.id == "右足" ) )
             {
@@ -2151,7 +1778,7 @@ struct ColladaModel
                 
                 glColor3f( 0.8, 0.8, 0.8 );
             }
-
++/
             if( current.children.empty ) return;
 
             foreach( child; current.children )
@@ -2165,7 +1792,7 @@ struct ColladaModel
             glLineWidth(2);
             glPointSize(8);
             glColor3f( 0.8, 0.8, 0.8 );        
-            makeBone( bone, [0.0f, 0.0f, 0.0f, 1.0] );
+            makeBone( bone, vec3( 0.0, 0.0, 0.0 ) );
             glColor3f( 1, 1, 1 );        
             glPointSize(1);
             glLineWidth(1);
