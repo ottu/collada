@@ -159,7 +159,7 @@ struct InstanceMaterial
 					BindVertexInput bvi;
 					bvi.load( elem );
 					bind_vertex_inputs ~= bvi;
-				}
+				} break;
 				
 				case "extra" : {} break;
 				default : {} break;

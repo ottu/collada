@@ -1,12 +1,12 @@
 module collada.dataflow;
 
 import std.algorithm;
+import std.conv : to;
 
 version( unittest )
 {
 	import std.stdio;
 	import std.array;
-	import std.conv : to;
 }
 
 import adjustxml;

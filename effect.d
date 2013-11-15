@@ -3,13 +3,13 @@ module collada.effect;
 import collada.base;
 
 import std.algorithm;
+import std.conv : to;
 
 import adjustxml;
 
 version( unittest )
 {
 	import std.stdio;
-	import std.conv : to;
 }
 
 enum PROFILETYPE : byte

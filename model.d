@@ -24,9 +24,12 @@ import collada.animation;
 
 import adjustxml;
 
-import opengl.gl;
-import opengl.glu;
-import opengl.glfw;
+//import opengl.gl;
+//import opengl.glu;
+//import opengl.glfw;
+import derelict.opengl3.gl;
+import derelict.opengl3.gl3;
+import derelict.glfw3.glfw3;
 
 import derelict.devil.il;
 import derelict.devil.ilu;
@@ -1616,7 +1619,7 @@ struct ColladaModel
         if( isMoving ) return;
         if( __interval == 0.0 ) return;
 
-        __interval = glfwGetTime - __interval;
+        __interval = glfwGetTime() - __interval;
 
         isMoving = true;
         startTime += __interval;
@@ -1651,7 +1654,7 @@ struct ColladaModel
     {
         if( !isMoving ) return;
         
-        currentTime = glfwGetTime - startTime;
+        currentTime = glfwGetTime() - startTime;
         bone.calcPose( Step.NEXT, currentTime );
         bone.calcIK();
         geometries[0].mesh._vertices.calc();
