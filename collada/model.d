@@ -1,6 +1,7 @@
 module collada.model;
 
 import std.stdio;
+import std.file;
 import std.algorithm;
 import std.range;
 import std.array;
@@ -627,15 +628,15 @@ struct WrappedEffect
             assert( _initFrom._self.type == IMAGETYPE.INITFROM );
             
             _initFrom.bind;
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); 
-            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _minfilter ); 
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _magfilter );         
-            glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
-                          ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE,
-                          ilGetData());
+            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); 
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _minfilter ); 
+            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _magfilter );         
             //glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
-            //              ilGetInteger(IL_IMAGE_HEIGHT), 0, _format, GL_UNSIGNED_BYTE,
+            //              ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE,
             //              ilGetData());
+            glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
+                          ilGetInteger(IL_IMAGE_HEIGHT), 0, _format, GL_UNSIGNED_BYTE,
+                          ilGetData());
         }
         else if( type == COLORTEXTURETYPE.COLOR )
         {
@@ -1129,18 +1130,12 @@ struct WrappedBone
         _self = node;
         
         id = node.id;
-        
+
         assert( node.matrixes.length == 1 );
         pose = toMat4( node.matrixes[0] );
 
-        writeln( node.matrixes[0] );
-        writeln( pose );
-        
         // OpenGL
         //pose.transpose;
-
-        writeln( pose );
-        writeln( "" );
 
         writefln( "Bone [%s] loaded!", _self.id );
         
@@ -1501,9 +1496,9 @@ struct IKConfig
 {
     XMLElement self;
 
-    this( XMLElement xml )
+    this( string filePath )
     {
-        self = xml;
+        self = parseXML( readText( filePath ) ).root;
     }
     
     void set( WrappedBone* bone )
@@ -1526,10 +1521,13 @@ struct IKConfig
         {
             assert( ik.attrs[1].name == "target" );
             auto ikEffect = findBone( bone, ik.attrs[1].value );
+            assert( ikEffect != null );
             ikEffect.isIK = true;
             
             assert( ik.attrs[0].name == "name" );
             ikEffect.IKTarget = findBone( bone, ik.attrs[0].value );
+            assert( ikEffect.IKTarget != null );
+
             assert( ik.attrs[2].name == "chain" );
             ikEffect.IKChain = ik.attrs[2].value.to!int;
             assert( ik.attrs[3].name == "iterations" );
@@ -1562,22 +1560,33 @@ struct ColladaModel
     float currentTime = 0.0;
     bool isMoving = false;
 
-    this( Collada collada, string modelDir )
+    this( string modelDir )
     {
-        _self = collada;
+        auto files = dirEntries( modelDir, "*.dae", SpanMode.shallow );
+        assert( !files.empty );
+
+        _self = new Collada( files.front.name );
         path = modelDir;
+
+        images = _self.libImages.wrapImages( path );
+        effects = _self.libEffects.wrapEffects( &images );
+        materials = _self.libMaterials.wrapMaterials( &effects );
+        geometries = _self.libGeometries.wrapGeometries;
+        controllers = _self.libControllers.wrapControllers( &(geometries[0]) );
+        animations ~= _self.libAnimations.wrapAnimations;
         
-        images = collada.libImages.wrapImages( path );
-        effects = collada.libEffects.wrapEffects( &images );
-        materials = collada.libMaterials.wrapMaterials( &effects );
-        geometries = collada.libGeometries.wrapGeometries;
-        controllers = collada.libControllers.wrapControllers( &(geometries[0]) );
-        animations ~= collada.libAnimations.wrapAnimations;
-        
-        bone = collada.libVisualScenes.visualScenes[0].nodes[0].wrapBone();
+        bone = _self.libVisualScenes.visualScenes[0].nodes[0].wrapBone();
         bone.connectVertexWeights( geometries[0].mesh._vertices, &(controllers[0]) );
         
-        node = collada.libVisualScenes.visualScenes[0].nodes[1].wrapNode( &(geometries[0]), &materials );
+        node = _self.libVisualScenes.visualScenes[0].nodes[1].wrapNode( &(geometries[0]), &materials );
+
+        //files = dirEntries( modelDir, "*.config", SpanMode.shallow );
+        //assert( !files.empty );
+        //
+        //auto ik = IKConfig( files.front.name );
+        //ik.set( &bone );
+
+        writeln( "model done" );
 
     }
 
@@ -1587,6 +1596,8 @@ struct ColladaModel
             image.release;
     }
 
+    // IKを読み込むタイミングで modelの<部位>ＩＫ(全角英字) が IK (半角文字)に変換されてしまっている為
+    //マッチする boneが無い状態になっていてモーション読み込みが失敗している様子。
     void selectAnimation( uint number )
     {
         writeln( "selected Animation" );
@@ -1594,12 +1605,12 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        auto ikConfig = IKConfig( parseXML( import( "AppearanceMikuA_ik.config" ) ).root );
-        //auto ikConfig = IKConfig( parseXML( import( "Lat_White_ne_ik.config" ) ).root );
-        //auto ikConfig = IKConfig( parseXML( import( "Lat_Normal_ik.config" ) ).root );
-        //auto ikConfig = IKConfig( parseXML( import( "Ver2_ik.config" ) ).root );
-        ikConfig.set( &bone );
+        auto files = dirEntries( path, "*.config", SpanMode.shallow );
+        assert( !files.empty );
         
+        auto ik = IKConfig( files.front.name );
+        ik.set( &bone );
+
         isMoving = true;
         startTime = glfwGetTime();
         currentTime = 0.0;
