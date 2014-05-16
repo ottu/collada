@@ -18,19 +18,12 @@ import std.stdio;
 import std.algorithm;
 import std.file;
 
-template GenLoader( T )
-{
-     immutable GenLoader = ( T lib, string name ) => "
-        vals = elems.find!( elem => elem.getName == \"" ~ name ~ "\" );
-        if( vals.length > 0 ) { writeln( " ~ name ~ " ); " ~ lib.stringof ~ ".load( vals[0] ); }
-    ";
-}
-
-string Gen( string lib, string name )
+private string Gen( string lib, string name )
 {
     return "vals = elems.find!( elem => elem.getName ==\"" ~ name ~ "\" );" ~
            "if( vals.length > 0 ) { writeln( \"" ~ name ~ "\" ); " ~ lib ~ ".load( vals[0] ); }";
 }
+
 
 class Collada
 {
@@ -47,8 +40,8 @@ class Collada
 	LibraryMaterials    libMaterials;
 	LibraryVisualScenes libVisualScenes;
 	//[] extra
-
-	this( string filePath )
+	
+    this( string filePath )
     {
         XmlDocument doc = XmlDocument( readText( filePath ) );
         _self = doc.getElements[0];
@@ -57,14 +50,14 @@ class Collada
         XmlNode[] vals = [];
 
         mixin( Gen( "libAnimations",   "library_animations" ) );
-        //mixin( GenLoader!( libCameras,      "library_cameras" ) );
-        //mixin( GenLoader!( libControllers,  "library_controllers" ) );
-        //mixin( GenLoader!( libEffects,      "library_effects" ) );
-        //mixin( GenLoader!( libGeometries,   "library_geometries" ) );
-        //mixin( GenLoader!( libImages,       "library_images" ) );
-        //mixin( GenLoader!( libLights,       "library_lights" ) );
-        //mixin( GenLoader!( libMaterials,    "library_materials" ) );
-        //mixin( GenLoader!( libVisualScenes, "library_visual_scenes" ) );
+        mixin( Gen( "libCameras",      "library_cameras" ) );
+        mixin( Gen( "libControllers",  "library_controllers" ) );
+        mixin( Gen( "libEffects",      "library_effects" ) );
+        mixin( Gen( "libGeometries",   "library_geometries" ) );
+        mixin( Gen( "libImages",       "library_images" ) );
+        mixin( Gen( "libLights",       "library_lights" ) );
+        mixin( Gen( "libMaterials",    "library_materials" ) );
+        mixin( Gen( "libVisualScenes", "library_visual_scenes" ) );
     }	
 	
     ~this() { }
