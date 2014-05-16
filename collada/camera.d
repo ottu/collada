@@ -58,11 +58,16 @@ struct Orthographic
 
 struct Perspective
 {
-	SIDValue xfov;
-	SIDValue yfov;
-	SIDValue aspect_ratio;
-	SIDValue znear;
-	SIDValue zfar;
+	//SIDValue xfov;
+	//SIDValue yfov;
+	//SIDValue aspect_ratio;
+	//SIDValue znear;
+	//SIDValue zfar;
+    Float1 xfov;
+    Float1 yfov;
+    Float1 aspect_ratio;
+    Float1 znear;
+    Float1 zfar;
 	
 	void load( XMLElement xml )
 	in 
@@ -79,6 +84,7 @@ struct Perspective
 	{
 		foreach( elem; xml.elems )
 		{
+            writeln( elem );
 			switch( elem.tag )
 			{
 				case "xfov"         : { xfov.load( elem ); } break;
@@ -194,6 +200,7 @@ struct Camera
 	{
 		foreach( attr; xml.attrs )
 		{
+            writeln( attr);
 			switch( attr.name )
 			{
 				case "id"   : { id   = attr.value; } break;
@@ -204,6 +211,7 @@ struct Camera
 		
 		foreach( elem; xml.elems )
 		{
+            writeln( elem );
 			switch( elem.tag )
 			{
 				case "asset"  : {} break;
@@ -228,11 +236,15 @@ struct LibraryCameras
 	void load( XMLElement xml )
 	in
 	{
+        writeln("in");
 		assert( xml.tag == "library_cameras" );
+        writeln("in done");
 	}
 	out
 	{
+        writeln("out");
 		assert( cameras.length > 0 );
+        writeln("out done");
 	}
 	body
 	{
@@ -287,7 +299,7 @@ unittest
 			</camera>
 		</library_cameras>
 	} ).root );
-	
+
 	assert( libcams.cameras.length == 1 );
 	assert( libcams.cameras[0].id == "cl_unnamed_1" );
 	assert( libcams.cameras[0].name == "cl_unnamed_1" );	

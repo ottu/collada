@@ -1,14 +1,17 @@
 module collada.collada;
 
-import collada.animation;
-import collada.camera;
-import collada.controller;
-import collada.effect;
-import collada.geometry;
-import collada.image;
-import collada.light;
-import collada.material;
-import collada.scene;
+public
+{
+    import collada.animation;
+    import collada.camera;
+    import collada.controller;
+    import collada.effect;
+    import collada.geometry;
+    import collada.image;
+    import collada.light;
+    import collada.material;
+    import collada.scene;
+}
 
 import std.stdio;
 import std.algorithm;

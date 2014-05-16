@@ -57,7 +57,9 @@ struct FloatCount(int count)
 	body
 	{
 		foreach( i, text; xml.texts )
+        {
 			value[i] = to!float( text );
+        }
 	}
 		
 	bool isValid() { return reduce!"a && (b != float.nan)"( true, value[] ); }

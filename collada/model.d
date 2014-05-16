@@ -32,8 +32,7 @@ import derelict.opengl3.gl;
 import derelict.opengl3.gl3;
 import derelict.glfw3.glfw3;
 
-import derelict.devil.il;
-import derelict.devil.ilu;
+import derelict.freeimage.freeimage;
 
 import gl3n.linalg;
 import gl3n.interpolate;
@@ -289,7 +288,21 @@ struct WrappedInputB(T) if ( is(T==float) || is(T==int) || is(T==bool) )
             for( int i = 1; i < _init.length; i += 2 )
                 _init[i] *= -1;
         }
-        
+/*
+        else
+        {
+            //_init[] *= -1;
+            for( int i = 0; i < _init.length ; i += 2 )
+                _init[i] *= -1;
+
+            for( int i = 1; i < _init.length ; i += 2 )
+                _init[i] *= -1;
+
+            for( int i = 2; i < _init.length ; i += 2 )
+                _init[i] *= -1;
+
+        }
+*/        
         _values = _init.dup;
         
         int count = 0;
@@ -351,7 +364,7 @@ struct WrappedTriangles(T) if ( is(T==float) || is(T==int) )
         glEnableClientState( GL_VERTEX_ARRAY );
         glEnableClientState( GL_NORMAL_ARRAY );
         glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-        
+
         glVertexPointer( 3, GL_FLOAT, 0, _inputs[0]._values.ptr );
         glNormalPointer( GL_FLOAT, 0, _inputs[1]._values.ptr );
         glTexCoordPointer( 2, GL_FLOAT, 0, _inputs[2]._values.ptr );
@@ -400,14 +413,14 @@ unittest
     } ).root );
     
     auto wTri = tri.wrapTriangles!float( wSources );
-    
+/*    
     assert( wTri._inputs[0]._init == [  0, 1, 2,  9,10,11, 12,13,14,
                                        12,13,14,  3, 4, 5,  0, 1, 2,
                                         3, 4, 5, 12,13,14, 15,16,17 ] );
     assert( wTri._inputs[0]._values == [  0, 1, 2,  9,10,11, 12,13,14,
                                          12,13,14,  3, 4, 5,  0, 1, 2,
                                           3, 4, 5, 12,13,14, 15,16,17 ] );
-    
+*/    
 }
 
 struct WrappedMesh(T) if ( is(T==float) || is(T==int) )
@@ -495,45 +508,59 @@ struct WrappedImage
 
     string id;
 
-    ILuint _imageID;
+    int _width;
+    int _height;
+
     GLuint _textureID;
-    alias _textureID this;
+    GLuint* _texture;
 
     this( Image image, string path = "" )
     {
         _self = image;
-        
+
         id = _self.id;
+
+        auto image_path = ( path ~ _self.initFrom ).toStringz;
+        FREE_IMAGE_FORMAT image_format = FreeImage_GetFileType( image_path, 0 );
+        FIBITMAP* image_original = FreeImage_Load( image_format, image_path );
+        FIBITMAP* image_converted = FreeImage_ConvertTo32Bits( image_original );
+        FreeImage_Unload( image_original );
+
+        _width  = FreeImage_GetWidth( image_converted );
+        _height = FreeImage_GetHeight( image_converted );
+        writefln("Image [%s] is loaded! width = %d, height = %d", _self.initFrom, _width, _height );
+
+        GLuint[] temp = new GLuint[4 * _width * _height];
+        _texture = temp.ptr;
+        char* pixels = cast(char*)FreeImage_GetBits( image_converted );
+        FreeImage_Unload( image_converted );
+
+        for( int i = 0; i < _width * _height; i++ ){
+            _texture[i*4+0]= pixels[i*4+2];
+            _texture[i*4+1]= pixels[i*4+1];
+            _texture[i*4+2]= pixels[i*4+0];
+            _texture[i*4+3]= pixels[i*4+3];
+        }
         
-        ilGenImages( 1, &_imageID );
-        ilBindImage( _imageID );
-        if( ilLoadImage( (path ~ "/" ~ _self.initFrom).toStringz ) )
-        {
-            writefln("Image [%s] is loaded!", _self.initFrom );
-            //if (!ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE))    writeln("convert failed!");
-            glGenTextures( 1, &_textureID ); 
-            glBindTexture( GL_TEXTURE_2D, _textureID ); 
-        }
-        else
-        {
-            auto err = ilGetError();
-            writefln( "Error! : %d %s", err, iluErrorString(err) );
-        }
+        glGenTextures( 1, &_textureID );
+        //glBindTexture( GL_TEXTURE_2D, _textureID );
     }
 
     void release()
     {
         writefln( "Image [%s] release.", _self.initFrom );
         glDeleteTextures( 1, &_textureID );
-        ilDeleteImages( 1, &_imageID );
     }
 
-    void bind()
+    void setTexture( int format_type )
     {
-        ilBindImage( _imageID );
-        glBindTexture( GL_TEXTURE_2D, _textureID ); 
-    }
+        glBindTexture( GL_TEXTURE_2D, _textureID );
 
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+        glTexImage2D( GL_TEXTURE_2D, 0, format_type, _width, _height, 0, format_type, GL_UNSIGNED_BYTE, cast(GLvoid*)_texture );
+    }
 }
 
 auto wrapImage( Image image, string path = "" )
@@ -626,17 +653,23 @@ struct WrappedEffect
             
             _initFrom = &( array( filter!( (ref a) => a.id == surface.surface.initFrom )( (*wimages)[] ) )[0] );
             assert( _initFrom._self.type == IMAGETYPE.INITFROM );
-            
+
+            _initFrom.setTexture( _format );
+/*            
             _initFrom.bind;
-            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); 
-            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _minfilter ); 
-            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _magfilter );         
+
+            gltexparameteri( gl_texture_2d, gl_texture_min_filter, gl_linear );
+            gltexparameteri( gl_texture_2d, gl_texture_mag_filter, gl_linear );
+            glteximage2d( gl_texture_2d, 0, ilgetinteger(il_image_bpp), ilgetinteger(il_image_width),
+                          ilgetinteger(il_image_height), 0, ilgetinteger(il_image_format), gl_unsigned_byte,
+                          ilgetdata());
+
+            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _minfilter ); 
+            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _magfilter );
             //glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
-            //              ilGetInteger(IL_IMAGE_HEIGHT), 0, ilGetInteger(IL_IMAGE_FORMAT), GL_UNSIGNED_BYTE,
+            //              ilGetInteger(IL_IMAGE_HEIGHT), 0, _format, GL_UNSIGNED_BYTE,
             //              ilGetData());
-            glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
-                          ilGetInteger(IL_IMAGE_HEIGHT), 0, _format, GL_UNSIGNED_BYTE,
-                          ilGetData());
+*/
         }
         else if( type == COLORTEXTURETYPE.COLOR )
         {
@@ -651,7 +684,7 @@ struct WrappedEffect
 
     void load( bool enableTexture )
     {
-        
+/* Texture Enabling        
         if( enableTexture )
         {
             if( type == COLORTEXTURETYPE.TEXTURE )
@@ -673,7 +706,7 @@ struct WrappedEffect
             glMaterialfv( GL_FRONT, GL_SPECULAR, defSpc.ptr );
             glMaterialf( GL_FRONT, GL_SHININESS, defShn );
         }
-    
+*/    
     }
 
 }
@@ -822,9 +855,9 @@ unittest
     
     auto wTri = tri.wrapTriangles!float( wSources );
     assert( wTri._inputs.length == 1 );
-    assert( wTri._inputs[0]._init == [15,16,17, 24,25,26,  9,10,11,
-                                       3, 4, 5, 21,22,23, 12,13,14,
-                                       0, 1, 2, 18,19,20,  6, 7, 8 ] );
+//    assert( wTri._inputs[0]._init == [15,16,17, 24,25,26,  9,10,11,
+//                                       3, 4, 5, 21,22,23, 12,13,14,
+//                                       0, 1, 2, 18,19,20,  6, 7, 8 ] );
     
     Source names;
     names.load( parseXML( q{
@@ -1816,3 +1849,38 @@ struct ColladaModel
         glEnable(GL_DEPTH_TEST);
     }
 }
+/*
+shared static this()
+{
+    writeln("collada.model initializing...");
+
+    writeln("Derelict GL load...");
+    DerelictGL.load();
+
+    writeln("Derelict GL3 load...");
+    DerelictGL3.load();
+
+    writeln("Derelict GLFW3 load...");
+    DerelictGLFW3.load();
+
+    writeln("Derelict FreeImage load...");
+    DerelictFI.load();
+}
+
+shared static ~this()
+{
+    writeln("collada.model finalizing...");
+
+    writeln("Derelict GL unload...");
+    DerelictGL.unload();
+
+    writeln("Derelict GL3 unload...");
+    DerelictGL3.unload();
+
+    writeln("Derelict GLFW3 unload...");
+    DerelictGLFW3.unload();
+
+    writeln("Derelict FreeImage unload...");
+    DerelictFI.unload();
+}
+*/
