@@ -9,6 +9,7 @@ public
     import collada.geometry;
     import collada.image;
     import collada.light;
+    import collada.model;
     import collada.material;
     import collada.scene;
     import collada.utils;
