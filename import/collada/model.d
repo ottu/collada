@@ -240,7 +240,7 @@ auto wrapSource(T)( Source source ) if ( isPermitted!T )
 unittest
 {
     Source source;
-    source.load( parseXML( q{
+    source.load( q{
         <source id="Position">
           <float_array id="Position-Array" count="9"> 1 2 3 4 5 6 7 8 9 </float_array>
           <technique_common>
@@ -251,7 +251,7 @@ unittest
             </accessor>
           </technique_common>
         </source>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wSource = source.wrapSource!float;
     assert( wSource._array._init == [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] );
@@ -383,7 +383,7 @@ auto wrapTriangles(T)( Triangles triangles, ref WrappedSource!(T)[] wsources )
 unittest
 {
     Source source;
-    source.load( parseXML( q{
+    source.load( q{
         <source id="Position">
           <float_array id="Position-Array" count="18"> 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 </float_array>
           <technique_common>
@@ -394,7 +394,7 @@ unittest
             </accessor>
           </technique_common>
         </source>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wSource = source.wrapSource!float;
     
@@ -402,12 +402,12 @@ unittest
     wSources ~= wSource;
 
     Triangles tri;
-    tri.load( parseXML( q{
+    tri.load( q{
         <triangles count="3" material="Symbol">
           <input semantic="VERTEX" source="#Position" offset="0" />
           <p> 0 3 4 4 1 0 1 4 5 </p>
         </triangles>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wTri = tri.wrapTriangles!float( wSources );
 /*    
@@ -517,7 +517,7 @@ struct WrappedImage
 
         id = _self.id;
 
-        auto image_path = ( path ~ _self.initFrom ).toStringz;
+        auto image_path = ( path ~ "/" ~ _self.initFrom ).toStringz;
         FREE_IMAGE_FORMAT image_format = FreeImage_GetFileType( image_path, 0 );
         FIBITMAP* image_original = FreeImage_Load( image_format, image_path );
         FIBITMAP* image_converted = FreeImage_ConvertTo32Bits( image_original );
@@ -551,12 +551,18 @@ struct WrappedImage
 
     void setTexture( int format_type )
     {
-        glBindTexture( GL_TEXTURE_2D, _textureID );
+        bind();
 
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
         glTexImage2D( GL_TEXTURE_2D, 0, format_type, _width, _height, 0, format_type, GL_UNSIGNED_BYTE, cast(GLvoid*)_texture );
+    }
+
+    void bind()
+    {
+        glBindTexture( GL_TEXTURE_2D, _textureID );
+
     }
 }
 
@@ -681,7 +687,6 @@ struct WrappedEffect
 
     void load( bool enableTexture )
     {
-/* Texture Enabling        
         if( enableTexture )
         {
             if( type == COLORTEXTURETYPE.TEXTURE )
@@ -703,7 +708,6 @@ struct WrappedEffect
             glMaterialfv( GL_FRONT, GL_SPECULAR, defSpc.ptr );
             glMaterialf( GL_FRONT, GL_SHININESS, defShn );
         }
-*/    
     }
 
 }
@@ -819,7 +823,7 @@ auto wrapVertexWeights( VertexWeights vw )
 unittest
 {
     Source source;
-    source.load( parseXML( q{
+    source.load( q{
         <source id="Position">
           <float_array id="Position-Array" count="27"> 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 </float_array>
           <technique_common>
@@ -830,7 +834,7 @@ unittest
             </accessor>
           </technique_common>
         </source>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wSource = source.wrapSource!float;
     assert( wSource._accessor.length == 9 );
@@ -840,12 +844,12 @@ unittest
     assert( wSource._accessor[8]._value == [24,25,26] );
     
     Triangles tri;
-    tri.load( parseXML( q{
+    tri.load( q{
         <triangles count="3" material="Symbol">
           <input semantic="VERTEX" source="#Position" offset="0" />
           <p> 5 8 3 1 7 4 0 6 2 </p>
         </triangles>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     WrappedSource!(float)[] wSources;
     wSources ~= wSource;
@@ -857,7 +861,7 @@ unittest
 //                                       0, 1, 2, 18,19,20,  6, 7, 8 ] );
     
     Source names;
-    names.load( parseXML( q{
+    names.load( q{
         <source id="Joint">
           <Name_array id="Joint-Array" count="5"> Bone0 Bone1 Bone2 Bone3 Bone4 </Name_array>
           <technique_common>
@@ -866,7 +870,7 @@ unittest
             </accessor>
           </technique_common>
         </source>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wNames = names.wrapSource!string;
     assert( wNames._accessor.length == 5 );
@@ -874,7 +878,7 @@ unittest
     assert( wNames._accessor[4]._value == [ "Bone4" ] );
     
     Source weights;
-    weights.load( parseXML( q{
+    weights.load( q{
         <source id="Weight">
           <float_array id="Weight-Array" count="2"> 1.000000 0.500000 </float_array>
           <technique_common>
@@ -883,7 +887,7 @@ unittest
             </accessor>
           </technique_common>
         </source>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wWeights = weights.wrapSource!float;
     assert( wWeights._accessor.length == 2 );
@@ -891,14 +895,14 @@ unittest
     assert( wWeights._accessor[1]._value == [ 0.500000 ] );
 
     VertexWeights vws;
-    vws.load( parseXML( q{
+    vws.load( q{
         <vertex_weights count="9">
           <input semantic="JOINT" source="#Joint" offset="0" />
           <input semantic="WEIGHT" source="#Weight" offset="1" />
           <vcount>1 1 1 1 1 1 1 1 2</vcount>
           <v>0 0 1 0 2 0 3 0 4 0 0 0 1 0 2 0 3 1 4 1</v>
         </vertex_weights>
-    } ).root );
+    }.readDocument.getChildren[0] );
     
     auto wVWs = vws.wrapVertexWeights;
     assert( wVWs._values.length == 9 );
@@ -1596,7 +1600,7 @@ struct ColladaModel
 
     this( string modelDir )
     {
-        auto files = dirEntries( modelDir, "*.dae", SpanMode.shallow );
+        auto files = dirEntries( modelDir, "*OR.dae", SpanMode.shallow );
         assert( !files.empty );
 
         _self = new Collada( files.front.name );
@@ -1639,7 +1643,7 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        auto files = dirEntries( path, "*.config", SpanMode.shallow );
+        auto files = dirEntries( path, "*OL_ik.config", SpanMode.shallow );
         assert( !files.empty );
         
         auto ik = IKConfig( files.front.name );

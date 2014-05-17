@@ -17,6 +17,7 @@ public
 
 import std.stdio;
 import std.algorithm;
+import std.array;
 import std.file;
 
 private string Gen( string lib, string name )
@@ -45,7 +46,7 @@ class Collada
     this( string filePath )
     {
         XmlDocument doc = XmlDocument( readText( filePath ) );
-        _self = doc.getElements[0];
+        _self = doc.getElements.find!( elem => elem.getName == "COLLADA" ).array[0];
 
         auto elems = _self.getElements;
         XmlNode[] vals = [];
