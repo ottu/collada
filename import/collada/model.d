@@ -282,24 +282,10 @@ struct WrappedInputB(T) if ( is(T==float) || is(T==int) || is(T==bool) )
         {
             //PMDはコメントアウト
             //PMXはコメントアウト外す
-            for( int i = 1; i < _init.length; i += 2 )
-                _init[i] *= -1;
+            //for( int i = 1; i < _init.length; i += 2 )
+            //    _init[i] *= -1;
         }
-/*
-        else
-        {
-            //_init[] *= -1;
-            for( int i = 0; i < _init.length ; i += 2 )
-                _init[i] *= -1;
 
-            for( int i = 1; i < _init.length ; i += 2 )
-                _init[i] *= -1;
-
-            for( int i = 2; i < _init.length ; i += 2 )
-                _init[i] *= -1;
-
-        }
-*/        
         _values = _init.dup;
         
         int count = 0;
@@ -509,7 +495,7 @@ struct WrappedImage
     int _height;
 
     GLuint _textureID;
-    GLuint* _texture;
+    GLubyte* _texture;
 
     this( Image image, string path = "" )
     {
@@ -525,44 +511,48 @@ struct WrappedImage
 
         _width  = FreeImage_GetWidth( image_converted );
         _height = FreeImage_GetHeight( image_converted );
-        writefln("Image [%s] is loaded! width = %d, height = %d", _self.initFrom, _width, _height );
 
-        GLuint[] temp = new GLuint[4 * _width * _height];
+        GLubyte[] temp = new GLubyte[4 * _width * _height];
         _texture = temp.ptr;
         char* pixels = cast(char*)FreeImage_GetBits( image_converted );
         FreeImage_Unload( image_converted );
 
+        //色情報の入れ替え。外すと色反転？
         for( int i = 0; i < _width * _height; i++ ){
             _texture[i*4+0]= pixels[i*4+2];
             _texture[i*4+1]= pixels[i*4+1];
             _texture[i*4+2]= pixels[i*4+0];
             _texture[i*4+3]= pixels[i*4+3];
         }
-        
+
+        //テクスチャIDの初期化。setTextureの中に移動すると Effectの数だけ ID作られてしまうのでここから動かさない事。
         glGenTextures( 1, &_textureID );
-        //glBindTexture( GL_TEXTURE_2D, _textureID );
+
+        writefln("Image [%s] is loaded! width = %d, height = %d", _self.initFrom, _width, _height );
     }
 
     void release()
     {
-        writefln( "Image [%s] release.", _self.initFrom );
+        writefln( "Image [%s](ID : %d) release.", _self.initFrom, _textureID );
         glDeleteTextures( 1, &_textureID );
     }
 
     void setTexture( int format_type )
     {
-        bind();
+        //初期化中に WrappedEffect の中で一度だけ呼び出される。
+        glBindTexture( GL_TEXTURE_2D, _textureID );
 
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, cast(GLvoid*)_texture );
 
-        glTexImage2D( GL_TEXTURE_2D, 0, format_type, _width, _height, 0, format_type, GL_UNSIGNED_BYTE, cast(GLvoid*)_texture );
+        writefln("Image [%s] is binded texture ID at %d", _self.initFrom, _textureID );
     }
 
     void bind()
     {
+        //モデルが描画される度に、貼付けるテクスチャの交換を行う。
         glBindTexture( GL_TEXTURE_2D, _textureID );
-
     }
 }
 
@@ -646,7 +636,6 @@ struct WrappedEffect
             assert( sampler.sampler2d.magfilter == "LINEAR" );
             _magfilter = GL_LINEAR;
             
-            
             NewParamCOMMON surface = array( filter!( (a) => a.sid == sampler.sampler2d.source )( _self.profiles[0].common.newparams ) )[0];
             
             assert( surface.type == NEWPARAMTYPE.SURFACE );
@@ -658,21 +647,6 @@ struct WrappedEffect
             assert( _initFrom._self.type == IMAGETYPE.INITFROM );
 
             _initFrom.setTexture( _format );
-/*            
-            _initFrom.bind;
-
-            gltexparameteri( gl_texture_2d, gl_texture_min_filter, gl_linear );
-            gltexparameteri( gl_texture_2d, gl_texture_mag_filter, gl_linear );
-            glteximage2d( gl_texture_2d, 0, ilgetinteger(il_image_bpp), ilgetinteger(il_image_width),
-                          ilgetinteger(il_image_height), 0, ilgetinteger(il_image_format), gl_unsigned_byte,
-                          ilgetdata());
-
-            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, _minfilter ); 
-            //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, _magfilter );
-            //glTexImage2D( GL_TEXTURE_2D, 0, ilGetInteger(IL_IMAGE_BPP), ilGetInteger(IL_IMAGE_WIDTH),
-            //              ilGetInteger(IL_IMAGE_HEIGHT), 0, _format, GL_UNSIGNED_BYTE,
-            //              ilGetData());
-*/
         }
         else if( type == COLORTEXTURETYPE.COLOR )
         {
@@ -1600,7 +1574,7 @@ struct ColladaModel
 
     this( string modelDir )
     {
-        auto files = dirEntries( modelDir, "*OR.dae", SpanMode.shallow );
+        auto files = dirEntries( modelDir, "*Normal.dae", SpanMode.shallow );
         assert( !files.empty );
 
         _self = new Collada( files.front.name );
@@ -1643,7 +1617,7 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        auto files = dirEntries( path, "*OL_ik.config", SpanMode.shallow );
+        auto files = dirEntries( path, "Normal_ik.config", SpanMode.shallow );
         assert( !files.empty );
         
         auto ik = IKConfig( files.front.name );
