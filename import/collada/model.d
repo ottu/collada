@@ -278,14 +278,6 @@ struct WrappedInputB(T) if ( is(T==float) || is(T==int) || is(T==bool) )
         foreach( i; indices )
             _init ~= wsource._accessor[i]._value;
         
-        if( _self.semantic == SEMANTICTYPE.TEXCOORD )
-        {
-            //PMDはコメントアウト
-            //PMXはコメントアウト外す
-            //for( int i = 1; i < _init.length; i += 2 )
-            //    _init[i] *= -1;
-        }
-
         _values = _init.dup;
         
         int count = 0;
@@ -1574,7 +1566,7 @@ struct ColladaModel
 
     this( string modelDir )
     {
-        auto files = dirEntries( modelDir, "*Normal.dae", SpanMode.shallow );
+        auto files = dirEntries( modelDir, "*OR.dae", SpanMode.shallow );
         assert( !files.empty );
 
         _self = new Collada( files.front.name );
@@ -1617,7 +1609,7 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        auto files = dirEntries( path, "Normal_ik.config", SpanMode.shallow );
+        auto files = dirEntries( path, "OR_ik.config", SpanMode.shallow );
         assert( !files.empty );
         
         auto ik = IKConfig( files.front.name );
