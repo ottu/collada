@@ -1844,7 +1844,7 @@ string readModelPath()
     return result;
 }
 
-/*
+
 shared static this()
 {
     writeln("collada.model initializing...");
@@ -1866,16 +1866,16 @@ shared static ~this()
 {
     writeln("collada.model finalizing...");
 
-    writeln("Derelict GL unload...");
-    DerelictGL.unload();
-
-    writeln("Derelict GL3 unload...");
-    DerelictGL3.unload();
+    writeln("Derelict FreeImage unload...");
+    DerelictFI.unload();
 
     writeln("Derelict GLFW3 unload...");
     DerelictGLFW3.unload();
 
-    writeln("Derelict FreeImage unload...");
-    DerelictFI.unload();
+    writeln("Derelict GL3 unload...");
+    DerelictGL3.unload();
+
+    writeln("Derelict GL unload...");
+    DerelictGL.unload();
 }
-*/
+
