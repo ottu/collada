@@ -6,8 +6,9 @@ import std.algorithm;
 import std.range;
 import std.array;
 import std.math;
-import std.string : toStringz;
+import std.string;
 import std.parallelism;
+import std.path;
 //import std.windows.charset;
 
 import collada.collada;
@@ -1498,7 +1499,8 @@ struct IKConfig
 
     this( string filePath )
     {
-        self = readText( filePath ).readDocument;
+        assert( exists( filePath ) );
+        self = readText( filePath ).readDocument.getChildren[1];
     }
     
     void set( WrappedBone* bone )
@@ -1545,7 +1547,6 @@ struct IKConfig
 struct ColladaModel
 {
     Collada _self;
-    string path;
 
     WrappedImages images;
     WrappedEffects effects;
@@ -1564,15 +1565,11 @@ struct ColladaModel
     float currentTime = 0.0;
     bool isMoving = false;
 
-    this( string modelDir )
+    this( string modelPath )
     {
-        auto files = dirEntries( modelDir, "*OR.dae", SpanMode.shallow );
-        assert( !files.empty );
+        _self = new Collada( modelPath );
 
-        _self = new Collada( files.front.name );
-        path = modelDir;
-
-        images = _self.libImages.wrapImages( path );
+        images = _self.libImages.wrapImages( dirName( modelPath ) );
         effects = _self.libEffects.wrapEffects( &images );
         materials = _self.libMaterials.wrapMaterials( &effects );
         geometries = _self.libGeometries.wrapGeometries;
@@ -1584,11 +1581,10 @@ struct ColladaModel
         
         node = _self.libVisualScenes.visualScenes[0].nodes[1].wrapNode( &(geometries[0]), &materials );
 
-        //files = dirEntries( modelDir, "*.config", SpanMode.shallow );
-        //assert( !files.empty );
-        //
-        //auto ik = IKConfig( files.front.name );
-        //ik.set( &bone );
+        string conf = stripExtension( modelPath ) ~ "_ik.config";
+        assert( exists( conf ) );
+        auto ik = IKConfig( conf );
+        ik.set( &bone );
 
         writeln( "model done" );
 
@@ -1609,12 +1605,6 @@ struct ColladaModel
         
         bone.connectKeyFrames( &( animations[number] ) );
         
-        auto files = dirEntries( path, "OR_ik.config", SpanMode.shallow );
-        assert( !files.empty );
-        
-        auto ik = IKConfig( files.front.name );
-        ik.set( &bone );
-
         isMoving = true;
         startTime = glfwGetTime();
         currentTime = 0.0;
@@ -1820,6 +1810,40 @@ struct ColladaModel
         glEnable(GL_DEPTH_TEST);
     }
 }
+
+string readModelPath()
+{
+    typeof(return) result;
+
+    string[string] list;
+
+    int num = 0;
+    foreach( DirEntry e; dirEntries("./public", SpanMode.shallow).filter!"a.isDir" )
+    {
+        foreach( name; dirEntries( e.name, "*.dae", SpanMode.shallow ) )
+        {
+            writefln( "%3d: %s", num, name );
+            list[num++.to!string] = name;
+        }
+    }
+
+    string line;
+    while( (line = readln.chop) !is null )
+    {
+        if( line.empty )
+            break;
+        else  if( line in list )
+        {
+            result = list[line];
+            break;
+        }
+        else
+            writeln( "please exist number." );
+    }
+
+    return result;
+}
+
 /*
 shared static this()
 {
